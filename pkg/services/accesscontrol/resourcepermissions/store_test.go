@@ -558,8 +558,8 @@ func seedResourcePermissions(
 }
 
 func setupTestEnv(t testing.TB) (*store, db.DB, *setting.Cfg) {
-	sql := db.InitTestDB(t)
-	return NewStore(sql, featuremgmt.WithFeatures()), sql, sql.Cfg
+	sql, cfg := db.InitTestDBwithCfg(t)
+	return NewStore(sql, featuremgmt.WithFeatures()), sql, cfg
 }
 
 func TestStore_IsInherited(t *testing.T) {
