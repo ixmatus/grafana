@@ -111,10 +111,15 @@ export class DataTrail extends SceneObjectBase<DataTrailState> {
       this.goBackToStep(step);
     });
 
+    // Save the current trail as a recent if the browser closes or reloads
+    const saveRecentTrail = () => getTrailStore().setRecentTrail(this);
+    window.addEventListener('unload', saveRecentTrail);
+
     return () => {
       if (!this.state.embedded) {
-        getTrailStore().setRecentTrail(this);
+        saveRecentTrail();
       }
+      window.removeEventListener('unload', saveRecentTrail);
     };
   }
 
@@ -148,8 +153,8 @@ export class DataTrail extends SceneObjectBase<DataTrailState> {
   }
 
   private syncTrailToUrl() {
-    if (this.state.embedded) {
-      // Embedded trails should not be altering the URL
+    if (this.state.embedded || !this.isActive) {
+      // Embedded trails or inactive trails should not be altering the URL
       return;
     }
 
