@@ -10,6 +10,7 @@ import (
 	"github.com/prometheus/client_golang/prometheus"
 	"go.opentelemetry.io/otel/attribute"
 
+	"github.com/grafana/grafana/pkg/aristandr"
 	"github.com/grafana/grafana/pkg/infra/log"
 	"github.com/grafana/grafana/pkg/infra/network"
 	"github.com/grafana/grafana/pkg/infra/remotecache"
@@ -182,6 +183,10 @@ type Service struct {
 func (s *Service) Authenticate(ctx context.Context, r *authn.Request) (*authn.Identity, error) {
 	ctx, span := s.tracer.Start(ctx, "authn.Authenticate")
 	defer span.End()
+
+	if r.HTTPRequest != nil {
+		ctx = tenantIdFromRequest(ctx, r.HTTPRequest)
+	}
 
 	var authErr error
 	for _, item := range s.clientQueue.items {
@@ -366,4 +371,16 @@ func orgIDFromHeader(req *http.Request) int64 {
 		return 0
 	}
 	return id
+}
+
+const tenantIDHeaderName = "X-Scope-OrgId"
+
+func tenantIdFromRequest(ctx context.Context, req *http.Request) context.Context {
+	header := req.Header.Get(tenantIDHeaderName)
+	if header == "" {
+		return ctx
+	}
+
+	ctx = aristandr.WithTenant(ctx, header)
+	return ctx
 }
